@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 Catatan Modern</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1>📝 <span>Catatan</span>Ku</h1>
+                <span class="header-badge">Pro</span>
+            </div>
+            <p class="header-sub">Simpan ide-ide berhargamu</p>
+        </header>
+
+        <!-- FORM TAMBAH CATATAN -->
+        <section class="form-section">
+            <div class="form-card glass">
+                <h2 class="form-title">✍️ Buat Catatan Baru</h2>
+                <div class="form-group">
+                    <input type="text" id="judulInput" placeholder="Judul catatan..." class="form-input">
+                </div>
+                <div class="form-group">
+                    <textarea id="isiInput" rows="4" placeholder="Tulis isi catatan di sini..." class="form-input"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button id="simpanBtn" class="btn btn-primary">
+                        <span class="btn-icon">💾</span> Simpan
+                    </button>
+                    <button id="batalBtn" class="btn btn-secondary" style="display:none;">
+                        <span class="btn-icon">✖</span> Batal
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PENCARIAN & FILTER -->
+        <section class="toolbar-section">
+            <div class="toolbar glass">
+                <div class="search-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="cariInput" placeholder="Cari catatan..." class="search-input">
+                </div>
+                <div class="filter-wrapper">
+                    <button class="filter-btn active" data-filter="all">Semua</button>
+                    <button class="filter-btn" data-filter="today">Hari Ini</button>
+                    <button class="filter-btn" data-filter="week">Minggu Ini</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- DAFTAR CATATAN -->
+        <section class="list-section">
+            <div class="list-header">
+                <h2>📚 Semua Catatan</h2>
+                <span id="totalCatatan" class="total-badge">0</span>
+            </div>
+            <div id="daftarCatatan" class="catatan-grid">
+                <p class="empty-state">📭 Belum ada catatan. Buat yang pertama!</p>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <p>© 2026 CatatanKu — Dibuat dengan ❤️ + ☕</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
