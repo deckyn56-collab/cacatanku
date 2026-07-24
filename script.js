@@ -12,14 +12,38 @@ const totalCatatan = document.getElementById('totalCatatan');
 const cariInput = document.getElementById('cariInput');
 
 // ========== STATE ==========
-let catatanSaatIni = []; // Semua catatan dari database
+let catatanSaatIni = [];
 let modeEdit = false;
 let idEdit = null;
 let currentFilter = 'all';
 
+// ========== FUNGSI CEK KONEKSI ==========
+async function testConnection() {
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/catatan?select=*&limit=1`, {
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+        });
+        
+        if (response.ok) {
+            console.log('✅ Koneksi ke Supabase berhasil!');
+            return true;
+        } else {
+            const errorText = await response.text();
+            console.error('❌ Gagal koneksi:', response.status, errorText);
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error koneksi:', error);
+        return false;
+    }
+}
+
 // ========== FUNGSI CRUD ==========
 
-// Ambil semua catatan dari Supabase
+// Ambil semua catatan
 async function ambilCatatan() {
     daftarCatatan.innerHTML = '<p class="empty-state">⏳ Memuat catatan...</p>';
     
@@ -31,18 +55,116 @@ async function ambilCatatan() {
             }
         });
         
-        if (!response.ok) throw new Error('Gagal mengambil data');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
         
         const data = await response.json();
         catatanSaatIni = data;
         terapkanFilter();
+        totalCatatan.textContent = data.length;
         
     } catch (error) {
-        daftarCatatan.innerHTML = `<p class="empty-state" style="color:#ef4444;">❌ ${error.message}</p>`;
+        daftarCatatan.innerHTML = `
+            <p class="empty-state" style="color:#ef4444;">
+                ❌ Gagal mengambil data<br>
+                <span style="font-size:12px;">${error.message}</span>
+                <br><br>
+                <button onclick="testConnection()" class="btn btn-primary" style="padding: 8px 16px; font-size: 12px;">
+                    🔄 Cek Koneksi
+                </button>
+            </p>
+        `;
+        console.error('Error detail:', error);
     }
 }
 
-// Tampilkan catatan di layar
+// Tambah catatan
+async function tambahCatatan(judul, isi) {
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/catatan`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({ judul, isi })
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        await ambilCatatan();
+        resetForm();
+        alert('✅ Catatan berhasil disimpan!');
+        
+    } catch (error) {
+        alert('❌ Gagal menyimpan: ' + error.message);
+        console.error('Error detail:', error);
+    }
+}
+
+// Update catatan
+async function updateCatatan(id, judul, isi) {
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/catatan?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({ judul, isi })
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        await ambilCatatan();
+        resetForm();
+        alert('✅ Catatan berhasil diupdate!');
+        
+    } catch (error) {
+        alert('❌ Gagal mengupdate: ' + error.message);
+        console.error('Error detail:', error);
+    }
+}
+
+// Hapus catatan
+async function hapusCatatan(id) {
+    if (!confirm('Yakin ingin menghapus catatan ini?')) return;
+    
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/catatan?id=eq.${id}`, {
+            method: 'DELETE',
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        await ambilCatatan();
+        alert('✅ Catatan berhasil dihapus!');
+        
+    } catch (error) {
+        alert('❌ Gagal menghapus: ' + error.message);
+        console.error('Error detail:', error);
+    }
+}
+
+// ========== FUNGSI TAMPILAN ==========
+
 function tampilkanCatatan(catatan) {
     if (catatan.length === 0) {
         daftarCatatan.innerHTML = '<p class="empty-state">📭 Belum ada catatan. Buat yang pertama!</p>';
@@ -66,7 +188,7 @@ function tampilkanCatatan(catatan) {
         daftarCatatan.appendChild(div);
     });
     
-    // Event listener untuk tombol edit & hapus
+    // Event listener edit
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const id = this.dataset.id;
@@ -75,6 +197,7 @@ function tampilkanCatatan(catatan) {
         });
     });
     
+    // Event listener hapus
     document.querySelectorAll('.hapus-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const id = this.dataset.id;
@@ -83,81 +206,6 @@ function tampilkanCatatan(catatan) {
     });
 }
 
-// Tambah catatan baru
-async function tambahCatatan(judul, isi) {
-    try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/catatan`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-            },
-            body: JSON.stringify({
-                judul: judul,
-                isi: isi
-            })
-        });
-        
-        if (!response.ok) throw new Error('Gagal menyimpan');
-        
-        await ambilCatatan();
-        resetForm();
-        
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-
-// Update catatan yang sudah ada
-async function updateCatatan(id, judul, isi) {
-    try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/catatan?id=eq.${id}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-            },
-            body: JSON.stringify({
-                judul: judul,
-                isi: isi
-            })
-        });
-        
-        if (!response.ok) throw new Error('Gagal mengupdate');
-        
-        await ambilCatatan();
-        resetForm();
-        
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-
-// Hapus catatan
-async function hapusCatatan(id) {
-    if (!confirm('Yakin ingin menghapus catatan ini?')) return;
-    
-    try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/catatan?id=eq.${id}`, {
-            method: 'DELETE',
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-            }
-        });
-        
-        if (!response.ok) throw new Error('Gagal menghapus');
-        
-        await ambilCatatan();
-        
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-
-// ========== FUNGSI FILTER ==========
 function terapkanFilter() {
     let filtered = [...catatanSaatIni];
     const now = new Date();
@@ -177,7 +225,6 @@ function terapkanFilter() {
         });
     }
     
-    // Filter pencarian
     const keyword = cariInput.value.toLowerCase();
     if (keyword !== '') {
         filtered = filtered.filter(c => 
@@ -197,7 +244,6 @@ function mulaiEdit(catatan) {
     isiInput.value = catatan.isi;
     idEdit = catatan.id;
     modeEdit = true;
-    
     simpanBtn.innerHTML = '<span class="btn-icon">💾</span> Update';
     batalBtn.style.display = 'inline-flex';
     judulInput.focus();
@@ -231,7 +277,6 @@ function formatTanggal(tanggal) {
 
 // ========== EVENT LISTENER ==========
 
-// Simpan atau Update
 simpanBtn.addEventListener('click', function() {
     const judul = judulInput.value.trim();
     const isi = isiInput.value.trim();
@@ -248,10 +293,7 @@ simpanBtn.addEventListener('click', function() {
     }
 });
 
-// Batal edit
 batalBtn.addEventListener('click', resetForm);
-
-// Cari catatan
 cariInput.addEventListener('input', terapkanFilter);
 
 // Filter tombol
@@ -268,4 +310,6 @@ filterBtns.forEach(btn => {
 // ========== INISIALISASI ==========
 window.onload = function() {
     ambilCatatan();
+    // Test koneksi otomatis
+    setTimeout(testConnection, 1000);
 };
