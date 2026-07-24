@@ -1,6 +1,6 @@
 // ========== KONFIGURASI SUPABASE ==========
 const SUPABASE_URL = 'https://dazhavdgidhwtedepfzg.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_7zDchThByULkHG5D2c2gRQ_4UkzrSDv';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhemhhdmRnaWRod3RlZGVwZnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NTE0NjcsImV4cCI6MjEwMDQyNzQ2N30.e_sxSOhcCJok1FcexAmYknqjQRvXEil087mDieZ2-88';
 
 // ========== AMBIL ELEMEN HTML ==========
 const judulInput = document.getElementById('judulInput');
